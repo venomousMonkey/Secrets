@@ -8,8 +8,10 @@ const { setTheUsername } = require('whatwg-url');
 //const encrypt = require('mongoose-encryption');   
 //swapping md5 for bcrypt
 //const md5 = require('md5');
-const bcrypt = require('bcrypt');
-const saltRounds = 10;
+
+//now removing bcrypt encryption as I'll implement passport features
+//const bcrypt = require('bcrypt');
+//const saltRounds = 10;
 
 const app = express();
 
@@ -41,39 +43,43 @@ app.get("/register", (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-    bcrypt.hash(req.body.password, saltRounds, (err, hash) => {
-    const newUser = new User({
-        email: req.body.username, 
-        password: hash
-    });
-    newUser.save((err) => {
-        if (err) {
-            console.log(err)
-        } else {
-            res.render('secrets');
-        }
-    });
-});
+
+//removing bcrypt in favor of passport
+//     bcrypt.hash(req.body.password, saltRounds, (err, hash) => {
+//     const newUser = new User({
+//         email: req.body.username, 
+//         password: hash
+//     });
+//     newUser.save((err) => {
+//         if (err) {
+//             console.log(err)
+//         } else {
+//             res.render('secrets');
+//         }
+//     });
+// });
 });
 
 app.post('/login', (req, res) => {
-    const userName = req.body.username;
-    const password = req.body.password;
+    
+//removing bcrypt in favor of passport
+//     const userName = req.body.username;
+//     const password = req.body.password;
 
-    User.findOne({email: userName }, (err, foundUser) => {
-        if (err) {
-            console.log(err); 
-        } else {
-  //          if (foundUser.password === password) { sintead using bCrypt
-              if (foundUser) { 
-                    bcrypt.compare(password, foundUser.password, (err, result) => {
-                        if (result === true) {
-                            res.render('secrets'); 
-                        } else console.log('Wrong password.');
-                    });      
-                } 
-        }
-    })
+//     User.findOne({email: userName }, (err, foundUser) => {
+//         if (err) {
+//             console.log(err); 
+//         } else {
+//   //          if (foundUser.password === password) { sintead using bCrypt
+//               if (foundUser) { 
+//                     bcrypt.compare(password, foundUser.password, (err, result) => {
+//                         if (result === true) {
+//                             res.render('secrets'); 
+//                         } else console.log('Wrong password.');
+//                     });      
+//                 } 
+//         }
+//     })
 
 });
 
