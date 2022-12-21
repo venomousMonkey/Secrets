@@ -1,4 +1,4 @@
-//require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs');
@@ -7,6 +7,8 @@ const { setTheUsername } = require('whatwg-url');
 const session = require('express-session');
 const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const findOrCreate = require('mongoose-findorcreate');
 
 //removing moongoose encryption as I'll switch to password hashing using md5
 //const encrypt = require('mongoose-encryption');   
@@ -38,10 +40,12 @@ mongoose.connect('mongodb://127.0.0.1:27017/userDB');
 
 const userSchema = new mongoose.Schema ({
     email: String, 
-    password: String
+    password: String,
+    googleId: String
 });
 
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 //userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']});
 
@@ -49,12 +53,57 @@ const User = new mongoose.model("User", userSchema);
 
 passport.use(User.createStrategy()); 
 
-passport.serializeUser(User.serializeUser());
-passport.deserializeUser(User.deserializeUser());
+// Will use more global way of persisting user information in the login session. One below is for passport-local-mongoose
+// passport.serializeUser(User.serializeUser());
+// passport.deserializeUser(User.deserializeUser());
+
+passport.serializeUser(function(user, cb) {
+    process.nextTick(function() {
+      cb(null, { id: user.id, username: user.username, name: user.name });
+    });
+  });
+  
+  passport.deserializeUser(function(user, cb) {
+    process.nextTick(function() {
+      return cb(null, user);
+    });
+  });
+
+//adding oauth2.0 google passport authentication 
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.CLIENT_ID,
+    clientSecret: process.env.CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/secrets"
+  },
+  function(accessToken, refreshToken, profile, cb) {
+    console.log(profile);
+    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+      return cb(err, user);
+    });
+  }
+));
 
 app.get("/", (req, res) => {
     res.render('home');
 });
+
+
+//When I wrap passport.authenticate within callback function it requires next parameter as input and returing at the end. TBD what for. 
+app.get("/auth/google", (req, res, next) => {
+    passport.authenticate('google', { scope: ['profile'] })(req,res,next)
+});
+
+//This is simpler implementation based on passport doc
+// app.get('/auth/google',
+//   passport.authenticate('google', { scope: ['profile'] }));
+
+app.get("/auth/google/secrets", 
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function(req, res) {
+    // Successful authentication, redirect to secrets.
+    res.redirect('/secrets');
+  });
 
 app.get("/login", (req, res) => {
     res.render('login');
