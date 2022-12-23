@@ -121,6 +121,10 @@ app.get("/secrets", (req, res) => {
     }
 });
 
+app.get("/submit", (req, res) => {
+  res.render('submit');
+});
+
 app.get("/logout", (req,res) => {
     req.logout((err) => {
         if (err) { return next(err); };
